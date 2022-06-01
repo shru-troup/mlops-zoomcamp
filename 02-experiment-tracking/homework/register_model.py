@@ -63,12 +63,20 @@ def run(data_path, log_top):
     for run in runs:
         train_and_log_model(data_path=data_path, params=run.data.params)
 
-    # select the model with the lowest test RMSE
+    #select the model with the lowest test RMSE
     experiment = client.get_experiment_by_name(EXPERIMENT_NAME)
-    # best_run = client.search_runs( ...  )[0]
-
+    best_run = client.search_runs(
+        experiment_ids=experiment.experiment_id,
+        run_view_type=ViewType.ACTIVE_ONLY,
+        max_results=log_top,
+        order_by=["metrics.test_rmse ASC"]
+    )[0]
+    best_run_id = best_run.info.run_id
+    print(f"Best Run --> run id: {best_run_id}, rmse: {best_run.data.metrics['test_rmse']:.4f}")
+    
     # register the best model
-    # mlflow.register_model( ... )
+    model_uri = f"runs:/{best_run_id}/model"
+    mlflow.register_model(model_uri=model_uri, name="nyc-taxi-hw2-regressor")
 
 
 if __name__ == '__main__':
